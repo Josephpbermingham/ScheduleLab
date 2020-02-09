@@ -1,0 +1,32 @@
+there is the stack and the heap. secondary memory is VERY slow this becomes a problem with context switching
+and copying data is also a VERY slow process.
+so doing TIME SHARING context switch ends up costing too much time.
+
+
+Static relocation:
+    Everyone gets their own space in memory, and have each process think it has a lot of memory    
+    There are parts of each program have static pointers/addresses eg:global variables
+    these chunks of explicit code need to be moved,
+    static relocation does this
+    this reload of the program is also pretty slow, and you can jump to a location that is already in use.
+    you then go through and change the STATIC parts of the code to the new locations
+
+    Disadvantages: processes can destroy eachother or the OS, cant move addres space after it has been blaced
+
+Dynamic relocation:
+    Same address space for processes and protect processes from one another.
+    This requires Hardware support (A memory management unit (MMU))
+    MMU dynamically changes process address at every memory reverence 
+        Process generates logical or virtual addressses(in their address space)
+        Memory Hardware
+    Two operating modes
+        Kernel(privledged,protected): can manipulate Hardware
+    User mode
+        Normal running mode
+    Minimal MMU contains base register for translateion
+        Base:staret location for address space
+
+
+
+
+
