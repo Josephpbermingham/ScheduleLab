@@ -112,7 +112,7 @@ int userinit(void)
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
-int Fork(int fork_proc_id)
+int uniqueFork(int fork_proc_id, int niceness)
 {
   int pid;
   struct proc *np, *fork_proc;
@@ -130,10 +130,12 @@ int Fork(int fork_proc_id)
   np->parent = fork_proc;
   // Copy files in real code
   strcpy(np->cwd, fork_proc->cwd);
-
   pid = np->pid;
   np->state = RUNNABLE;
   strcpy(np->name, fork_proc->name);
+  //Do the stuff for completly fair
+  np->niceness = niceness;
+  np->vruntime = 0;
   return pid;
 }
 

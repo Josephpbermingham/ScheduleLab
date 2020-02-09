@@ -65,7 +65,7 @@ int local_scheduler()
 
 int main()
 {
-    //allow the user to pick which algorythm to use. this is done on good faith
+    //allow the user to pick which algorythm to use. this is done on good faith, not a lot of error checking
     printf("Select a scheduling algorithm. 0 is default 1 is completly fair 2 is round robin:");
     char buf[101];
     scanf(" %c%*c", buf);
@@ -130,11 +130,17 @@ int executeCmd(char **params, int nparams)
             pid = curr_proc->pid;
         if (chosenScheduler == 0)
         {
-            int fpid = Fork(pid);
+            int fpid = uniqueFork(pid, -100);
             printf("pid: %d forked: %d\n", pid, fpid);
         }
-        else if (chosenScheduler == 0)
+        else if (chosenScheduler == 1)
         {
+            //They chose completly fair, and should enter a niceness
+            printf("Please enter a niceness for this process, min is -20 max is 20\n");
+            int niceness = -100;
+            scanf("%d%*c", niceness);
+            int fpid=uniqueFork(pid,niceness);
+
 
         }
         break;
