@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <math.h>
 #include "types.h"
 #include "defs.h"
 #include "proc.h"
@@ -66,10 +67,10 @@ int local_scheduler()
 int main()
 {
     //allow the user to pick which algorythm to use. this is done on good faith, not a lot of error checking
-    printf("Select a scheduling algorithm. 0 is default 1 is completly fair 2 is round robin:");
-    char buf[101];
-    scanf(" %c%*c", buf);
-    chosenScheduler = atoi(buf);
+    //printf("Select a scheduling algorithm. 0 is default 1 is completly fair 2 is round robin:");
+    //char buf[101];
+    //scanf("%c%*c", buf);
+    chosenScheduler = 1; //atoi(buf);
 
     pinit();                   // initialize process table
     curr_proc_id = userinit(); // create first user process
@@ -128,6 +129,7 @@ int executeCmd(char **params, int nparams)
             pid = atoi(params[1]);
         else
             pid = curr_proc->pid;
+
         if (chosenScheduler == 0)
         {
             int fpid = uniqueFork(pid, -100);
@@ -138,10 +140,9 @@ int executeCmd(char **params, int nparams)
             //They chose completly fair, and should enter a niceness
             printf("Please enter a niceness for this process, min is -20 max is 20\n");
             int niceness = -100;
-            scanf("%d%*c", niceness);
-            int fpid=uniqueFork(pid,niceness);
-
-
+            scanf("%d%*c", &niceness);
+            printf("you chose niceness:%d\n", niceness);
+            int fpid = uniqueFork(pid, niceness);
         }
         break;
     case SETPID:
@@ -210,6 +211,11 @@ int executeCmd(char **params, int nparams)
             printf("timer quantums\n");
         else
         {
+            printf("Changing current proc, pid:%d, weight:%d\n",curr_proc->pid,curr_proc-> weight);
+            curr_proc->runtime+=1;
+            double curWeight = getProcWeight();
+            printf("curr_proc->vruntime:%d, curWeight:%lf\n",curr_proc->vruntime,curWeight);
+            curr_proc->vruntime +=((1024 / curWeight) * curr_proc->runtime);
             int quantums = atoi(params[1]);
             for (int i = 0; i < quantums; i++)
             {
@@ -219,7 +225,7 @@ int executeCmd(char **params, int nparams)
         }
         break;
     case HELP:
-        printf("Commands: Fork, Wait, Exit, Dump, Setpid, Showpid, Sleep, Wakeup, Help\n");
+        printf("Commands: Fork, Wait, Exit, Setpid, Showpid, Sleep, Wakeup, Help, PS\n");
         break;
     case QUIT:
         rc = 0;

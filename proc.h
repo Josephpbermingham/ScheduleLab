@@ -70,5 +70,7 @@ struct proc
   char name[PNAME];        // Process name (debugging)
   int vruntime;            // Virtual runtime
   int niceness;            // Niceness,used to calculate weight
-  int weight;              // Weight is calculated as 1024/(1.25)^(nice)
+  double weight;           // Weight is calculated as 1024/(1.25)^(nice)
+  int runtime;             // realtime that this process HAS BEEN running
+  int timeSlice;          // time that this proc SHOULD BE running
 };

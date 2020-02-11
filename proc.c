@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "types.h"
 #include "defs.h"
 #include "proc.h"
@@ -105,6 +106,7 @@ int userinit(void)
   strcpy(p->cwd, "/");
   strcpy(p->name, "userinit");
   p->state = RUNNING;
+  p->niceness = 0;
   curr_proc = p;
   return p->pid;
 }
@@ -116,6 +118,7 @@ int uniqueFork(int fork_proc_id, int niceness)
 {
   int pid;
   struct proc *np, *fork_proc;
+  printf("Hello in uniquefork\n");
 
   // Find current proc
   if ((fork_proc = findproc(fork_proc_id)) == 0)
@@ -136,6 +139,9 @@ int uniqueFork(int fork_proc_id, int niceness)
   //Do the stuff for completly fair
   np->niceness = niceness;
   np->vruntime = 0;
+  np->weight = 1024 / (pow(1.25, np->niceness));
+  np->runtime = 0;
+  np->timeSlice;
   return pid;
 }
 
@@ -328,19 +334,30 @@ void completlyFairScheduler(void)
   curr_proc->state = RUNNABLE;
 
   struct proc *p;
-
+  int curMaxVruntime = -1;
+  struct proc *chosen;
   acquire(&ptable.lock);
+  printf("Aquired table lock\n");
+
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    if (p == curr_proc || p->state != RUNNABLE)
-      continue;
-
-    // Switch to chosen process.
-    curr_proc = p;
-    p->state = RUNNING;
-    break;
+    //printf("INLOOP pid: %d, parent: %d state: %s vruntime:%d\n",
+    //     p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->vruntime);
+    if (curMaxVruntime < p->vruntime)
+    {
+      printf("new current max is %d\n", p->vruntime);
+      curMaxVruntime = p->vruntime;
+      chosen = p;
+    }
   }
+  // Switch to chosen process.
+  printf("Chosen= pid: %d, parent: %d state: %s vruntime:%d\n",
+         chosen->pid, chosen->parent == 0 ? 0 : chosen->parent->pid, procstatep[chosen->state], chosen->vruntime);
+
+  curr_proc = chosen;
+  chosen->state = RUNNING;
   release(&ptable.lock);
+  printf("Released lock\n");
 }
 
 // Print a process listing to console.  For debugging.
@@ -352,5 +369,18 @@ void procdump(void)
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if (p->pid > 0)
-      printf("pid: %d, parent: %d state: %s\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state]);
+      printf("pid: %d, parent: %d state: %s vruntime:%d niceness:%d\n",
+             p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->vruntime, p->niceness);
+}
+
+double getProcWeight()
+{
+  double weight = 0;
+  struct proc *p;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->weight > 0)
+      weight += p->weight;
+  }
+  return weight;
 }
