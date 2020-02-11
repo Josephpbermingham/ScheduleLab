@@ -107,6 +107,7 @@ int userinit(void)
   strcpy(p->name, "userinit");
   p->state = RUNNING;
   p->niceness = 0;
+  p->weight = 1024;
   curr_proc = p;
   return p->pid;
 }
@@ -118,7 +119,6 @@ int uniqueFork(int fork_proc_id, int niceness)
 {
   int pid;
   struct proc *np, *fork_proc;
-  printf("Hello in uniquefork\n");
 
   // Find current proc
   if ((fork_proc = findproc(fork_proc_id)) == 0)
@@ -334,30 +334,27 @@ void completlyFairScheduler(void)
   curr_proc->state = RUNNABLE;
 
   struct proc *p;
-  int curMaxVruntime = -1;
+  int curMinVruntime = curr_proc->vruntime;
   struct proc *chosen;
   acquire(&ptable.lock);
-  printf("Aquired table lock\n");
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
     //printf("INLOOP pid: %d, parent: %d state: %s vruntime:%d\n",
     //     p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->vruntime);
-    if (curMaxVruntime < p->vruntime)
+    if (p->pid > 0 && curMinVruntime > p->vruntime)
     {
-      printf("new current max is %d\n", p->vruntime);
-      curMaxVruntime = p->vruntime;
+      //printf("new current min is %d\n", p->vruntime);
+      curMinVruntime = p->vruntime;
       chosen = p;
+     
     }
   }
-  // Switch to chosen process.
-  printf("Chosen= pid: %d, parent: %d state: %s vruntime:%d\n",
-         chosen->pid, chosen->parent == 0 ? 0 : chosen->parent->pid, procstatep[chosen->state], chosen->vruntime);
 
+  // Switch to chosen process.
   curr_proc = chosen;
-  chosen->state = RUNNING;
+  curr_proc->state = RUNNING;
   release(&ptable.lock);
-  printf("Released lock\n");
 }
 
 // Print a process listing to console.  For debugging.
@@ -369,18 +366,31 @@ void procdump(void)
 
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if (p->pid > 0)
-      printf("pid: %d, parent: %d state: %s vruntime:%d niceness:%d\n",
-             p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->vruntime, p->niceness);
+      printf("pid: %d, parent: %d state: %s vruntime:%d realRuntime:%d weight:%f Niceness:%d\n",
+             p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->vruntime, p->runtime, p->weight, p->niceness);
 }
+int getTotalProcs()
+{
+  int ret = 0;
+  struct proc *p;
 
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if (p->pid > 0)
+      ret++;
+  return ret;
+}
 double getProcWeight()
 {
-  double weight = 0;
+  double ret = 0;
   struct proc *p;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    if (p->weight > 0)
-      weight += p->weight;
+    if (p->pid > 0)
+    {
+      ret += p->weight;
+    }
   }
-  return weight;
+  printf("WEIGHT AFTER STUFF %f\n", ret);
+
+  return ret;
 }

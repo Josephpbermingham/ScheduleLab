@@ -17,6 +17,8 @@ int executeCmd(char **params, int nparams);
 
 #define MAX_COMMAND_LENGTH 100
 #define MAX_NUMBER_OF_PARAMS 10
+#define TIME_SLICE 48
+#define MIN_GRAN 12
 
 enum cmds
 {
@@ -211,14 +213,28 @@ int executeCmd(char **params, int nparams)
             printf("timer quantums\n");
         else
         {
-            printf("Changing current proc, pid:%d, weight:%d\n",curr_proc->pid,curr_proc-> weight);
-            curr_proc->runtime+=1;
+            // printf("Changing current proc, pid:%d, weight:%d\n", curr_proc->pid, curr_proc->weight);
+
+            //get total weight
             double curWeight = getProcWeight();
-            printf("curr_proc->vruntime:%d, curWeight:%lf\n",curr_proc->vruntime,curWeight);
-            curr_proc->vruntime +=((1024 / curWeight) * curr_proc->runtime);
+            printf("curr_proc->vruntime:%d, curWeight:%f \n", curr_proc->vruntime, curWeight);
+
+            //get schedule latency
+            double scheduleLatency = (getTotalProcs() / TIME_SLICE);
+            if (scheduleLatency < MIN_GRAN)
+            {
+                scheduleLatency = MIN_GRAN;
+            }
+            printf("Hi\n\n");
             int quantums = atoi(params[1]);
             for (int i = 0; i < quantums; i++)
             {
+                curr_proc->runtime += 1;
+
+                double time_slice = curr_proc->weight / curWeight * scheduleLatency;
+                //printf("curWeight:%lf, curr_proc->runtime:%d weight:%lf\n",curWeight,curr_proc->runtime,curr_proc->weight);
+                curr_proc->vruntime += ((1024 / curr_proc->weight) * curr_proc->runtime);
+
                 pid = local_scheduler();
                 printf("Scheduler selected pid: %d\n", pid);
             }

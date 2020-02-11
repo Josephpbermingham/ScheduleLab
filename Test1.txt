@@ -1,6 +1,10 @@
 fork 
+1 
+fork 
 0 
 fork 
-10 
-timer 3 
-ps 
+-1 
+fork 
+-20 
+timer 400 
+ps  
